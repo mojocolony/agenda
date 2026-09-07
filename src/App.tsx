@@ -1,8 +1,10 @@
 import { SpatialPlanes } from './components/navigation/SpatialPlanes';
 import { SixMonthView } from './components/calendar/SixMonthView';
 import { PlaceholderView } from './components/PlaceholderView';
+import { MonthView } from './components/calendar/MonthView';
 import './styles/navigation.css';
 import './styles/six-month.css';
+import './styles/month.css';
 
 export default function App() {
   return (
@@ -10,7 +12,7 @@ export default function App() {
       <SpatialPlanes
         settings={<PlaceholderView label="SETTINGS" />}
         sixMonth={<SixMonthView />}
-        month={<PlaceholderView label="SEPTEMBER 2026" />}
+        month={<MonthView anchor={new Date()} today={new Date()} />}
         agenda={<PlaceholderView label="AGENDA" />}
       />
     </main>

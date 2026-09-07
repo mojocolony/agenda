@@ -2,7 +2,7 @@
 
 Agenda is a faithful reconstruction of the classic Savvy Apps Agenda calendar interaction model.
 
-## Build 001
+## Build 002
 
 This first durable checkpoint contains:
 
