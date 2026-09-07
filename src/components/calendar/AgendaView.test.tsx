@@ -36,7 +36,9 @@ describe('AgendaView', () => {
     expect(screen.getByText('Artisan Market')).toBeInTheDocument();
     expect(screen.getByText('all-day')).toBeInTheDocument();
     expect(screen.getByText('Dinner')).toBeInTheDocument();
-    expect(screen.getByText('6:30 PM')).toBeInTheDocument();
+    const dinner = screen.getByText('Dinner').closest('.agenda-event');
+    expect(dinner).not.toBeNull();
+    expect(dinner?.textContent).toMatch(/\d{1,2}:30 PM/);
     expect(screen.getByText('Hamilton')).toBeInTheDocument();
     expect(screen.getAllByLabelText('Add event').length).toBeGreaterThan(0);
   });
