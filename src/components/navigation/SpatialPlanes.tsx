@@ -2,12 +2,20 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAgendaNavigation } from '../../state/useAgendaNavigation';
 import { PositionIndicator } from './PositionIndicator';
 
-interface Props { settings: ReactNode; sixMonth: ReactNode; month: ReactNode; agenda: ReactNode; }
+interface Props { settings: ReactNode; sixMonth: ReactNode; month: ReactNode; agenda: ReactNode; plane?: 'settings' | 'sixMonth' | 'month' | 'agenda'; onPlaneChange?: (plane: 'settings' | 'sixMonth' | 'month' | 'agenda') => void; }
 
 const CAPTURE_THRESHOLD = 10;
 
-export function SpatialPlanes({ settings, sixMonth, month, agenda }: Props) {
-  const navigation = useAgendaNavigation('sixMonth');
+export function SpatialPlanes({ settings, sixMonth, month, agenda, plane, onPlaneChange }: Props) {
+  const navigation = useAgendaNavigation(plane ?? 'sixMonth');
+
+  useEffect(() => {
+    if (plane && plane !== navigation.plane) navigation.setPlane(plane);
+  }, [plane, navigation.plane]);
+
+  useEffect(() => {
+    onPlaneChange?.(navigation.plane);
+  }, [navigation.plane, onPlaneChange]);
   const rootRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<{ id: number; startX: number; startY: number; captured: boolean } | null>(null);
   const [width, setWidth] = useState(390);

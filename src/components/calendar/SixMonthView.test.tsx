@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { SixMonthView } from './SixMonthView';
 
@@ -9,6 +9,19 @@ describe('SixMonthView', () => {
       expect(screen.getByText(month)).toBeInTheDocument();
     }
     expect(screen.queryByText('JUNE')).not.toBeInTheDocument();
+  });
+
+  it('reports the exact tapped date', () => {
+    let selected = '';
+    const { container } = render(
+      <SixMonthView
+        anchor={new Date(2026, 8, 6)}
+        today={new Date(2026, 8, 6)}
+        onSelectDate={date => { selected = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`; }}
+      />
+    );
+    fireEvent.click(container.querySelector('[data-date="2026-09-20"]')!);
+    expect(selected).toBe('2026-9-20');
   });
 
   it('marks today and the week containing today', () => {

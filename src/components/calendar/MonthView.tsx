@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { localISODate, monthGrid, weekContaining } from '../../domain/dates';
 import type { AgendaCalendar, AgendaEvent } from '../../domain/types';
 
@@ -43,6 +43,11 @@ export function MonthView({ anchor = new Date(), today = new Date(), events = []
   const [selectedDate, setSelectedDate] = useState(() => new Date(initialSelected.getFullYear(), initialSelected.getMonth(), initialSelected.getDate()));
   const [weekMode, setWeekMode] = useState(false);
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => weekContaining(initialSelected)[0]);
+  useEffect(() => {
+    const next = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+    setSelectedDate(next);
+    setSelectedWeekStart(weekContaining(next)[0]);
+  }, [anchor.getFullYear(), anchor.getMonth(), anchor.getDate()]);
   const cells = useMemo(() => monthGrid(monthAnchor.getFullYear(), monthAnchor.getMonth()), [monthAnchor.getFullYear(), monthAnchor.getMonth()]);
   const todayKey = localISODate(today);
   const selectedKey = localISODate(selectedDate);
