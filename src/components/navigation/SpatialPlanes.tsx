@@ -4,13 +4,12 @@ import { PositionIndicator } from './PositionIndicator';
 
 interface Props { settings: ReactNode; sixMonth: ReactNode; month: ReactNode; agenda: ReactNode; }
 
-function isInteractiveTarget(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest('button, a, input, textarea, select, [role=\"button\"]'));
-}
+const CAPTURE_THRESHOLD = 10;
 
 export function SpatialPlanes({ settings, sixMonth, month, agenda }: Props) {
   const navigation = useAgendaNavigation('sixMonth');
   const rootRef = useRef<HTMLDivElement>(null);
+  const pointerRef = useRef<{ id: number; startX: number; startY: number; captured: boolean } | null>(null);
   const [width, setWidth] = useState(390);
 
   useEffect(() => {
@@ -25,17 +24,61 @@ export function SpatialPlanes({ settings, sixMonth, month, agenda }: Props) {
   const index = ['settings', 'sixMonth', 'month', 'agenda'].indexOf(navigation.plane);
   const transform = -index * width + navigation.dragOffset;
 
+  function localX(element: HTMLElement, clientX: number) {
+    return clientX - element.getBoundingClientRect().left;
+  }
+
   return (
-    <div ref={rootRef} className="spatial-root"
+    <div
+      ref={rootRef}
+      className="spatial-root"
       onPointerDown={event => {
-        if (isInteractiveTarget(event.target)) return;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        navigation.beginDrag(event.clientX - event.currentTarget.getBoundingClientRect().left, event.clientY);
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        const x = localX(event.currentTarget, event.clientX);
+        pointerRef.current = { id: event.pointerId, startX: x, startY: event.clientY, captured: false };
+        navigation.beginDrag(x, event.clientY);
       }}
-      onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) navigation.moveDrag(event.clientX - event.currentTarget.getBoundingClientRect().left, event.clientY); }}
-      onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); navigation.endDrag(); }}
-      onPointerCancel={() => navigation.endDrag()}>
-      <div className="spatial-track" style={{ transform: `translate3d(${transform}px,0,0)`, transition: navigation.dragOffset === 0 ? 'transform 260ms ease-out' : 'none' }}>
+      onPointerMove={event => {
+        const pointer = pointerRef.current;
+        if (!pointer || pointer.id !== event.pointerId) return;
+
+        const x = localX(event.currentTarget, event.clientX);
+        const dx = x - pointer.startX;
+        const dy = event.clientY - pointer.startY;
+
+        navigation.moveDrag(x, event.clientY);
+
+        if (
+          !pointer.captured &&
+          Math.abs(dx) >= CAPTURE_THRESHOLD &&
+          Math.abs(dx) > Math.abs(dy)
+        ) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          pointer.captured = true;
+        }
+      }}
+      onPointerUp={event => {
+        const pointer = pointerRef.current;
+        if (!pointer || pointer.id !== event.pointerId) return;
+        if (pointer.captured && event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        navigation.endDrag();
+        pointerRef.current = null;
+      }}
+      onPointerCancel={event => {
+        if (pointerRef.current?.id !== event.pointerId) return;
+        navigation.endDrag();
+        pointerRef.current = null;
+      }}
+    >
+      <div
+        className="spatial-track"
+        style={{
+          transform: `translate3d(${transform}px,0,0)`,
+          transition: navigation.dragOffset === 0 ? 'transform 260ms ease-out' : 'none'
+        }}
+      >
         <section className="spatial-plane">{settings}</section>
         <section className="spatial-plane">{sixMonth}</section>
         <section className="spatial-plane">{month}</section>
