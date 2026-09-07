@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AgendaPlane } from './state/useAgendaNavigation';
+import type { AgendaPlane as AgendaPlaneName } from './state/useAgendaNavigation';
 import { SpatialPlanes } from './components/navigation/SpatialPlanes';
 import { SixMonthView } from './components/calendar/SixMonthView';
 import { PlaceholderView } from './components/PlaceholderView';
@@ -22,7 +22,7 @@ function AgendaApp() {
   const { calendars, events, preferences, createCalendar, createEvent } = useCalendar();
   const [editorDate, setEditorDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [plane, setPlane] = useState<AgendaPlane>('sixMonth');
+  const [plane, setPlane] = useState<AgendaPlaneName>('sixMonth');
 
   function selectFromSixMonth(date: Date) {
     setSelectedDate(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
