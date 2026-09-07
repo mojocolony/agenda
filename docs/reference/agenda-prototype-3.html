@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Agenda — Prototype 2</title>
+<style>
+:root{
+  --paper:#f7f7f7;--ink:#3d414b;--muted:#9a9ca2;--rule:#c8cacf;
+  --bar:#454b59;--bar2:#6b707b;--today:#e93634;
+  --purple:#8f93ff;--cyan:#86dbe1;--green:#3db47f;--pink:#d552a2;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#111;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink)}
+button,input{font:inherit}
+.phone{position:relative;margin:auto;width:min(100vw,430px);height:min(100dvh,860px);background:var(--paper);overflow:hidden}
+.top-safe{height:26px;background:#fff}
+.stage{position:absolute;inset:26px 0 0;overflow:hidden;background:var(--paper)}
+.views{height:100%;display:flex;width:400%;transform:translateX(-75%);transition:transform .28s ease-out}
+.view{width:25%;height:100%;overflow:hidden;position:relative;background:var(--paper)}
+.plus{border:0;background:none;color:#656974;font-size:62px;font-weight:300;line-height:.8;padding:0;cursor:pointer}
+.bottom-index{position:absolute;z-index:8;bottom:0;left:0;right:0;height:14px;background:#bbb;border-top:1px solid #999}
+.bottom-index:after{content:"";display:block;width:25%;height:100%;margin-left:var(--indicator-left,75%);background:#f4f4f4;border-left:1px solid #999;border-right:1px solid #999;transition:margin-left .28s ease-out}
+
+/* Six month */
+.six{padding:50px 32px 28px;overflow:auto}
+.six .plus{position:absolute;right:18px;top:26px}
+.six-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 38px;margin-top:30px}
+.mini-title{text-align:center;font-size:15px;font-weight:800;font-style:italic;margin-bottom:8px}
+.mini{display:grid;grid-template-columns:repeat(7,1fr);font-size:12px;line-height:1.75;text-align:center;position:relative}
+.mini .dow{font-weight:800;font-size:11px}
+.mini .outside{color:#cfd0d3}
+.mini .today{color:var(--today);font-weight:800;font-style:italic}
+.mini .week{background:#d4d4d4}
+.mini .week.first{border-radius:3px 0 0 3px}.mini .week.last{border-radius:0 3px 3px 0}
+
+
+/* Settings plane */
+.settings{overflow:auto;padding:36px 20px 30px;background:#f3f3f3}
+.settings-title{text-align:center;font-size:34px;font-style:italic;font-weight:300;padding:4px 0 18px;border-bottom:1px solid #e3e3e3}
+.settings-section{font-size:18px;font-weight:800;color:#90939a;margin:28px 0 28px}
+.settings-row{height:78px;margin:0 0 0 0;border-top:1px solid #d5d5d5;display:flex;align-items:center;padding:0 18px;font-size:21px;font-weight:700}
+.settings-row:last-child{border-bottom:1px solid #d5d5d5}.settings-row span{margin-left:auto;color:#999;font-size:34px;font-weight:400}
+/* Month week split */
+.week-split{height:100%;display:grid;grid-template-columns:39% 48% 13%;background:#fff}
+.big-date{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:18px;border-right:1px solid #bbb}
+.big-date .md{font-size:18px}.big-date .num{font-size:82px;font-weight:800;line-height:1.15}.big-date .year{font-size:22px;font-weight:800;line-height:.9;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:-4px}
+.week-mini{padding:15px 9px;border-right:1px solid #bbb}.week-mini .mini-title{display:none}.week-mini .mini{font-size:14px;line-height:1.65}.week-mini .mini .dow{font-size:12px}.week-mini .wk{background:#d1d1d1;cursor:pointer}.week-mini .wk.first{border-radius:2px 0 0 2px}.week-mini .wk.last{border-radius:0 2px 2px 0}.week-mini .today{color:var(--today);font-weight:800}
+.week-add{display:grid;place-items:center;font-size:58px;color:#656974;font-weight:300}
+.rings{cursor:pointer}
+
+/* Month */
+.month{display:flex;flex-direction:column}
+.month-top{height:48%;min-height:365px;padding:30px 10px 0;background:#fff}
+.month-head{display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:0 4px 8px 60px}
+.month-name{font-size:34px;font-weight:300;font-style:italic;white-space:nowrap}
+.month-head .plus{font-size:58px}
+.month-grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;row-gap:4px}
+.month-grid .dow{font-weight:800;font-size:16px;padding:0 0 8px}
+.daycell{height:37px;position:relative;font-size:23px;font-weight:300;display:flex;align-items:flex-start;justify-content:center;padding-top:1px;cursor:pointer}
+.daycell.outside{color:#d0d1d3}
+.daycell.today{color:var(--today);font-weight:700}
+.daycell.selected:before{content:"";position:absolute;inset:-1px 4px 0;background:linear-gradient(#ddd,#fafafa);box-shadow:inset 0 1px 7px #aaa;z-index:0}
+.daycell .n{z-index:1}
+.dots{position:absolute;bottom:0;display:flex;gap:3px;z-index:2}
+.dots i{width:5px;height:5px;border-radius:50%;display:block}
+.day-strip{height:37px;background:linear-gradient(#596071,#414754);color:white;display:flex;align-items:center;padding:0 13px;font-size:17px}
+.day-strip strong{font-size:18px;margin-right:4px}
+.day-strip .rings{margin-left:auto;display:flex;gap:8px}
+.day-strip .rings i{width:17px;height:17px;border-radius:50%;border:2px solid #262a33;box-shadow:inset 0 0 4px #777}
+.selected-events{flex:1;position:relative;padding:18px 14px 28px;background:#f3f3f3}
+.empty-plus{position:absolute;inset:0;display:grid;place-items:center;color:#d3d3d3;font-size:115px;font-weight:200;text-shadow:0 1px white}
+.sel-event{display:grid;grid-template-columns:14px 1fr auto;gap:12px;align-items:start;margin-bottom:16px;cursor:pointer}
+.event-dot{width:12px;height:12px;border-radius:50%;margin-top:5px;box-shadow:inset 0 0 1px #555}
+.sel-event .name{font-weight:700;font-size:21px}
+.sel-event .sub{font-size:17px;margin-top:7px;color:#4d515a}
+.sel-event .right{font-size:16px;color:#999;padding-top:3px}
+
+/* Agenda */
+.agenda{overflow-y:auto;padding-bottom:14px;scrollbar-width:none}
+.agenda::-webkit-scrollbar{display:none}
+.agenda-month{position:sticky;top:0;z-index:5;height:58px;background:rgba(81,86,98,.9);color:white;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:300;font-style:italic;transition:opacity .65s ease}
+.agenda-month .plus{position:absolute;right:13px;color:#eee;font-size:55px}
+.agenda-day{border-bottom:1px solid var(--rule);padding:14px 14px 13px;min-height:66px;background:#fafafa}
+.agenda-day.today{background:#f0f0f0}
+.agenda-date{font-size:18px;color:#9a9ca1;margin-bottom:10px}
+.agenda-date strong{font-size:20px;font-weight:800;margin-right:5px}
+.agenda-empty{position:relative;min-height:30px}
+.agenda-empty button{position:absolute;right:8px;top:-29px;border:0;background:none;color:#c9c9c9;font-size:34px;font-weight:200}
+.agenda-event{display:grid;grid-template-columns:13px 1fr auto;gap:12px;align-items:start;margin:6px 0;cursor:pointer}
+.agenda-event .name{font-size:20px;line-height:1.2}
+.agenda-event .time{font-size:16px;color:#999;white-space:nowrap;padding-top:2px}
+.agenda-event .loc{font-size:14px;color:#999;margin-top:3px}
+
+/* overlays */
+.shade{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:20;opacity:0;pointer-events:none;transition:.25s}
+.shade.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;z-index:21;top:26px;bottom:0;left:20px;width:calc(100% - 20px);background:#f2f2f2;transform:translateX(105%);transition:transform .28s ease-out;box-shadow:-8px 0 18px rgba(0,0,0,.25)}
+.sheet.on{transform:translateX(0)}
+.detail-head{height:38px;background:linear-gradient(#596071,#3f4551);color:#fff;display:flex;align-items:center;padding-left:13px;font-size:17px}
+.detail-head strong{font-size:18px;margin-right:4px}.edit{margin-left:auto;width:54px;height:38px;border:0;border-left:1px solid #151821;background:none;color:#fff;font-size:24px}
+.detail-body{padding:18px 14px}
+.detail-title{display:flex;gap:14px;align-items:start;font-size:24px;font-weight:700}
+.detail-lines{padding:12px 0 15px 27px;font-size:18px;line-height:1.9}
+.detail-lines span{display:inline-block;width:31px;font-weight:700}
+.notes{border-top:1px solid #bbb;padding-top:20px;font-size:17px;font-weight:700;color:#8f9198}
+.detail-actions{position:absolute;bottom:0;left:0;right:0;height:64px;display:grid;grid-template-columns:repeat(4,1fr);background:linear-gradient(#fff,#eee);border-top:1px solid #bbb}
+.detail-actions button{border:0;border-right:1px solid #ccc;background:none;font-size:25px;color:#3f4450}
+
+.drawer{position:absolute;z-index:25;right:0;top:26px;bottom:0;width:30%;background:#90939b;transform:translateX(100%);transition:.28s;box-shadow:-8px 0 16px rgba(0,0,0,.2);overflow:auto}
+.drawer.on{transform:translateX(0)}
+.drawer .year{background:#252a34;color:#fff;text-align:center;font-size:22px;font-weight:800;padding:7px}
+.drawer button{width:100%;border:0;border-bottom:1px solid rgba(255,255,255,.16);background:none;color:#fff;font-size:23px;font-weight:800;padding:17px 4px}
+
+/* editor */
+.editor{position:absolute;z-index:30;inset:26px 0 0;background:#f4f4f4;transform:translateY(105%);transition:.3s;overflow:auto}
+.editor.on{transform:translateY(0)}
+.editor-head{height:76px;display:grid;grid-template-columns:60px 1fr 60px;align-items:center;border-bottom:1px solid #ddd}
+.editor-head button{border:0;background:none;font-size:38px;color:#3e434e}
+.editor-head .et{text-align:center;font-size:34px;font-style:italic;font-weight:300}
+.title-input{width:100%;height:66px;border:0;border-bottom:1px solid #aaa;background:#f5f5f5;padding:0 50px;font-size:28px;color:#3e434e;outline:none}
+.editor-date{display:grid;grid-template-columns:40% 60%;height:265px;border-bottom:1px solid #aaa}
+.date-summary{padding:20px 17px;font-size:19px}.date-summary strong{display:block;font-size:21px}.date-summary .light{color:#aaa;margin-top:5px}
+.editor-mini{padding:16px 10px}.editor-mini .mini{font-size:15px}.editor-mini .mini-title{font-size:20px}
+.time-slider{height:64px;background:#3e434f;color:white;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;font-style:italic;position:relative}
+.time-slider:before{content:"◷";position:absolute;left:0;width:50px;height:64px;display:grid;place-items:center;background:#3e434f;border-radius:0 35px 35px 0;font-style:normal}
+.formrow{display:grid;grid-template-columns:110px 1fr;gap:10px;padding:14px 18px;border-bottom:1px solid #ccc;font-size:17px}
+.formrow label{font-weight:700;color:#777}.formrow input,.formrow select{border:0;background:transparent;font-size:17px;color:#3e434e;outline:none}
+
+/* gesture hint */
+.hint{position:absolute;z-index:10;bottom:21px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.85);border:1px solid #ccc;border-radius:20px;padding:5px 9px;font-size:10px;color:#777;transition:opacity 1s}
+@media(max-width:430px){.phone{width:100vw;height:100dvh}}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="top-safe"></div>
+  <div class="stage">
+    <div class="views" id="views">
+      <section class="view settings" id="settingsView">
+        <div class="settings-title">SETTINGS</div><div class="settings-section">GENERAL</div>
+        <div class="settings-row">Calendars <span>›</span></div><div class="settings-row">Reminders <span>›</span></div><div class="settings-row">Event Creation <span>›</span></div><div class="settings-row">Date &amp; Time <span>›</span></div><div class="settings-row">Sharing <span>›</span></div><div class="settings-row">Applications <span>›</span></div><div class="settings-row">App Icon Badge <span>›</span></div><div class="settings-row">Sound Effects <span>›</span></div>
+      </section>
+      <section class="view six" id="sixView"><button class="plus" data-add>+</button><div class="six-grid" id="sixGrid"></div></section>
+      <section class="view month" id="monthView">
+        <div class="month-top" id="monthTop">
+          <div class="month-head"><div class="month-name">SEPTEMBER 2026</div><button class="plus" data-add>+</button></div>
+          <div class="month-grid" id="monthGrid"></div>
+        </div>
+        <div class="day-strip" id="dayStrip"></div>
+        <div class="selected-events" id="selectedEvents"></div>
+      </section>
+      <section class="view agenda" id="agendaView">
+        <div class="agenda-month" id="agendaMonth">SEPTEMBER ’26 <button class="plus" data-add>+</button></div>
+        <div id="agendaDays"></div>
+      </section>
+    </div>
+    <div class="bottom-index"></div>
+    <div class="hint" id="hint">Swipe horizontally between views</div>
+  </div>
+
+  <div class="shade" id="shade"></div>
+  <aside class="sheet" id="detailSheet">
+    <div class="detail-head"><strong id="detailDow">SUNDAY</strong>&nbsp;<span id="detailDate">SEP 13, 2026</span><button class="edit" id="editBtn">✎</button></div>
+    <div class="detail-body">
+      <div class="detail-title"><i class="event-dot" id="detailDot"></i><span id="detailTitle"></span></div>
+      <div class="detail-lines" id="detailLines"></div>
+      <div class="notes">NOTES<div id="detailNotes" style="font-weight:400;margin-top:10px"></div></div>
+    </div>
+    <div class="detail-actions"><button>↗</button><button>✉</button><button>●</button><button>▰</button></div>
+  </aside>
+
+  <aside class="drawer" id="drawer"></aside>
+
+  <section class="editor" id="editor">
+    <div class="editor-head"><button id="cancelEdit">×</button><div class="et">EVENT</div><button id="saveEdit">✓</button></div>
+    <input class="title-input" id="editTitle" placeholder="Event title">
+    <div class="editor-date"><div class="date-summary"><strong id="editDateLabel">SEP 13, 2026</strong><div class="light">All-day</div></div><div class="editor-mini" id="editorMini"></div></div>
+    <div class="time-slider">ALL-DAY</div>
+    <div class="formrow"><label>ALERT</label><select><option>None</option><option>At time of event</option><option>30 minutes before</option><option>1 day before</option></select></div>
+    <div class="formrow"><label>2ND ALERT</label><select><option>None</option><option>1 hour before</option><option>1 day before</option></select></div>
+    <div class="formrow"><label>LOCATION</label><input id="editLocation" placeholder="Location"></div>
+    <div class="formrow"><label>NOTES</label><input id="editNotes" placeholder="Notes"></div>
+  </section>
+</div>
+<script>
+const C={purple:"#8f93ff",cyan:"#86dbe1",green:"#3db47f",pink:"#d552a2"};
+let events=[
+{id:1,date:"2026-09-05",title:"Nani & Renu Masi Over 😒",allDay:true,color:"purple"},
+{id:2,date:"2026-09-06",title:"Taking Shobhs to Western",allDay:true,color:"purple"},
+{id:3,date:"2026-09-07",title:"Last day of CNE!",allDay:true,color:"purple"},
+{id:4,date:"2026-09-07",title:"Phil Storer coming - roof quote",time:"1:30 PM",color:"purple"},
+{id:5,date:"2026-09-08",title:"First Day of School 😬",allDay:true,color:"purple"},
+{id:6,date:"2026-09-08",title:"P going to LSO",allDay:true,color:"purple"},
+{id:7,date:"2026-09-08",title:"P getting home later - committee",time:"7:30 PM",color:"purple"},
+{id:8,date:"2026-09-09",title:"First day of classes - Shobhs",allDay:true,color:"purple"},
+{id:9,date:"2026-09-09",title:"P going to LSO",allDay:true,color:"purple"},
+{id:10,date:"2026-09-09",title:"P getting home later - committee",time:"7:00 PM",color:"purple"},
+{id:11,date:"2026-09-10",title:"P going to LSO",allDay:true,color:"purple"},
+{id:12,date:"2026-09-13",title:"Dundas Artisan Market",allDay:true,color:"purple",location:"Dundas, Ontario",notes:""},
+{id:13,date:"2026-09-15",title:"Fozzie’s Bday!!!",allDay:true,color:"cyan",alert:"1 day before · 9:00 AM"},
+{id:14,date:"2026-09-16",title:"Coffee with Priya",time:"10:30 AM",color:"green",location:"Hamilton"},
+{id:15,date:"2026-09-21",title:"Appointment",time:"2:00 PM",color:"cyan"},
+{id:16,date:"2026-09-28",title:"Dinner",time:"7:00 PM",color:"cyan",location:"Dundas"},
+{id:17,date:"2026-10-01",title:"October reminder",allDay:true,color:"purple"},
+{id:18,date:"2026-10-04",title:"Family lunch",time:"12:30 PM",color:"green"}
+];
+const state={view:3,selected:"2026-09-06",detail:null,monthSplit:false};
+const views=document.getElementById("views"), agenda=document.getElementById("agendaView");
+function key(y,m,d){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`}
+function evs(k){return events.filter(e=>e.date===k)}
+function dateObj(k){let [y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)}
+function color(e){return C[e.color]||C.purple}
+function setView(i){state.view=Math.max(0,Math.min(3,i));views.style.transform=`translateX(${-state.view*25}%)`;document.querySelector('.bottom-index').style.setProperty('--indicator-left',`${state.view*25}%`);if(state.view===3)flashMonth()}
+function monthData(y,m){
+ let first=new Date(y,m,1), days=new Date(y,m+1,0).getDate(), prev=new Date(y,m,0).getDate(), cells=[];
+ for(let i=first.getDay()-1;i>=0;i--)cells.push({d:prev-i,out:-1});
+ for(let d=1;d<=days;d++)cells.push({d,out:0});
+ let n=1;while(cells.length<42)cells.push({d:n++,out:1});return cells;
+}
+function miniHTML(y,m,weekBand=false){
+ const names=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+ let cells=monthData(y,m), s=`<div class="mini-title">${names[m]} ${y}</div><div class="mini">`;
+ "SMTWTFS".split("").forEach(x=>s+=`<div class="dow">${x}</div>`);
+ cells.forEach((c,i)=>{
+   let actual=c.out===0?new Date(y,m,c.d):new Date(y,m+c.out,c.d);
+   let k=key(actual.getFullYear(),actual.getMonth(),actual.getDate()), cl=c.out?"outside":"";
+   if(k==="2026-09-06")cl+=" today";
+   if(weekBand && actual>=new Date(2026,8,6)&&actual<=new Date(2026,8,12))cl+=` week ${(i%7===0)?"first":""} ${(i%7===6)?"last":""}`;
+   s+=`<div class="${cl}">${c.d}</div>`;
+ }); return s+"</div>";
+}
+function renderSix(){
+ let box=document.getElementById("sixGrid");box.innerHTML="";
+ for(let m=6;m<=11;m++){let d=document.createElement("div");d.innerHTML=miniHTML(2026,m,m===8);box.appendChild(d)}
+}
+function renderMonth(){
+ if(state.monthSplit){renderWeekSplit();return}else{document.getElementById("monthTop").innerHTML=`<div class="month-head"><div class="month-name">SEPTEMBER 2026</div><button class="plus" data-add>+</button></div><div class="month-grid" id="monthGrid"></div>`;}
+ const grid=document.getElementById("monthGrid");grid.innerHTML="";
+ "SMTWTFS".split("").forEach(x=>grid.insertAdjacentHTML("beforeend",`<div class="dow">${x}</div>`));
+ monthData(2026,8).forEach(c=>{
+   let dt=c.out===0?new Date(2026,8,c.d):new Date(2026,8+c.out,c.d), k=key(dt.getFullYear(),dt.getMonth(),dt.getDate());
+   let div=document.createElement("div");div.className="daycell"+(c.out?" outside":"")+(k==="2026-09-06"?" today":"")+(k===state.selected?" selected":"");
+   div.innerHTML=`<span class="n">${c.d}</span>`;
+   let es=evs(k);if(es.length){let ds=document.createElement("span");ds.className="dots";[...new Set(es.map(e=>e.color))].slice(0,3).forEach(cc=>ds.insertAdjacentHTML("beforeend",`<i style="background:${C[cc]}"></i>`));div.appendChild(ds)}
+   div.onclick=()=>{state.selected=k;renderMonth()};grid.appendChild(div)
+ });
+ renderSelected();
+ document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{state.detail=null;openEditor(null)});
+}
+function renderWeekSplit(){
+ const d=dateObj(state.selected), names=["SUN","MON","TUE","WED","THU","FRI","SAT"], mons=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+ let cells=monthData(2026,8), html=`<div class="week-split"><div class="big-date"><div class="md">${names[d.getDay()]}/${mons[d.getMonth()]}</div><div style="display:flex;align-items:center;gap:34px"><div class="num">${d.getDate()}</div><div class="year">2026</div></div></div><div class="week-mini"><div class="mini">`;
+ "SMTWTFS".split("").forEach(x=>html+=`<div class="dow">${x}</div>`);
+ let sel=d.getDate(), selWeek=Math.floor((new Date(2026,8,1).getDay()+sel-1)/7);
+ cells.forEach((c,i)=>{let row=Math.floor(i/7), cl=c.out?"outside":"";if(!c.out&&row===selWeek)cl+=` wk ${(i%7===0)?"first":""} ${(i%7===6)?"last":""}`;if(!c.out&&c.d===6)cl+=" today";html+=`<div class="${cl}" data-day="${c.out?'':c.d}">${c.d}</div>`});
+ html+=`</div></div><div class="week-add">+</div></div>`;document.getElementById("monthTop").innerHTML=html;
+ document.querySelectorAll('.week-mini [data-day]').forEach(el=>el.onclick=()=>{if(!el.dataset.day)return;let clicked=+el.dataset.day, base=new Date(2026,8,clicked), sunday=new Date(base);sunday.setDate(base.getDate()-base.getDay());state.selected=key(sunday.getFullYear(),sunday.getMonth(),sunday.getDate());renderMonth()});
+ document.querySelector('.week-add').onclick=()=>openEditor(null);renderSelected();
+}
+function renderSelected(){
+ let d=dateObj(state.selected), names=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"], mons=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+ document.getElementById("dayStrip").innerHTML=`<strong>${names[d.getDay()]}</strong> ${mons[d.getMonth()]} ${d.getDate()}<span class="rings"><i></i><i></i><i></i></span>`;
+ let box=document.getElementById("selectedEvents"), es=evs(state.selected);box.innerHTML="";
+ if(!es.length){box.innerHTML=`<div class="empty-plus">+</div>`;return}
+ es.forEach(e=>{let r=document.createElement("div");r.className="sel-event";r.innerHTML=`<i class="event-dot" style="background:${color(e)}"></i><div><div class="name">${e.title}</div><div class="sub">${e.allDay?"all-day":(e.time||"")}${e.alert?" &nbsp; 🔔 "+e.alert:""}</div></div><div class="right"></div>`;r.onclick=()=>openDetail(e.id);box.appendChild(r)})
+}
+function renderAgenda(){
+ let box=document.getElementById("agendaDays");box.innerHTML="";
+ let start=new Date(2026,7,31), end=new Date(2026,9,15), names=["SUN","MON","TUE","WED","THU","FRI","SAT"];
+ for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+   let k=key(d.getFullYear(),d.getMonth(),d.getDate()), es=evs(k), sec=document.createElement("section");
+   sec.className="agenda-day"+(k==="2026-09-06"?" today":"");sec.dataset.month=d.getMonth();sec.dataset.year=d.getFullYear();sec.id="a-"+k;
+   sec.innerHTML=`<div class="agenda-date"><strong>${names[d.getDay()]}</strong>${d.getDate()}</div>`;
+   if(!es.length)sec.insertAdjacentHTML("beforeend",`<div class="agenda-empty"><button>+</button></div>`);
+   es.forEach(e=>{let r=document.createElement("div");r.className="agenda-event";r.innerHTML=`<i class="event-dot" style="background:${color(e)}"></i><div><div class="name">${e.title}</div>${e.location?`<div class="loc">${e.location}</div>`:""}</div><div class="time">${e.allDay?"all-day":e.time}</div>`;r.onclick=()=>openDetail(e.id);sec.appendChild(r)});
+   box.appendChild(sec);
+ }
+}
+document.getElementById("dayStrip").addEventListener("click",e=>{if(e.target.closest(".rings")){state.monthSplit=!state.monthSplit;renderMonth()}});
+let fadeTimer;
+function flashMonth(){
+ let h=document.getElementById("agendaMonth");h.style.opacity=1;clearTimeout(fadeTimer);fadeTimer=setTimeout(()=>h.style.opacity=0,2000)
+}
+function updateAgendaMonth(){
+ const secs=[...document.querySelectorAll(".agenda-day")], top=agenda.scrollTop+70;
+ let current=secs[0];for(const s of secs){if(s.offsetTop<=top)current=s;else break}
+ const mons=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+ document.getElementById("agendaMonth").childNodes[0].nodeValue=`${mons[+current.dataset.month]} ’${String(current.dataset.year).slice(2)} `;
+ flashMonth()
+}
+agenda.addEventListener("scroll",updateAgendaMonth,{passive:true});
+function openDetail(id){
+ let e=events.find(x=>x.id===id);state.detail=id;let d=dateObj(e.date), dn=["SUNDAY","MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY"], mn=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+ detailDow.textContent=dn[d.getDay()];detailDate.textContent=`${mn[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;detailTitle.textContent=e.title;detailDot.style.background=color(e);
+ detailLines.innerHTML=`<div><span>◷</span>${e.allDay?"all-day":e.time||"-"}</div><div><span>♟</span>${e.alert||"-"}</div><div><span>♟</span>-</div><div><span>●</span>${e.location||"-"}</div>`;
+ detailNotes.textContent=e.notes||"";shade.classList.add("on");detailSheet.classList.add("on")
+}
+function closeDetail(){shade.classList.remove("on");detailSheet.classList.remove("on")}
+shade.onclick=()=>{closeDetail();drawer.classList.remove("on")};
+editBtn.onclick=()=>openEditor(state.detail);
+function openEditor(id){
+ let e=events.find(x=>x.id===id)||{date:state.selected,title:"",location:"",notes:""};editTitle.value=e.title||"";editLocation.value=e.location||"";editNotes.value=e.notes||"";
+ let d=dateObj(e.date), mn=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];editDateLabel.textContent=`${mn[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+ editorMini.innerHTML=miniHTML(d.getFullYear(),d.getMonth());editor.classList.add("on")
+}
+cancelEdit.onclick=()=>editor.classList.remove("on");
+saveEdit.onclick=()=>{let e=events.find(x=>x.id===state.detail);if(e){e.title=editTitle.value;e.location=editLocation.value;e.notes=editNotes.value}editor.classList.remove("on");closeDetail();renderMonth();renderAgenda()};
+document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{state.detail=null;openEditor(null)});
+function buildDrawer(){
+ let d=document.getElementById("drawer");d.innerHTML=`<div class="year">2026</div>`;
+ ["SEP","OCT","NOV","DEC"].forEach((m,i)=>{let b=document.createElement("button");b.textContent=m;b.onclick=()=>jumpMonth(8+i,2026);d.appendChild(b)});
+ d.insertAdjacentHTML("beforeend",`<div class="year">2027</div>`);
+ ["JAN","FEB","MAR","APR","MAY","JUN","JUL"].forEach(m=>d.insertAdjacentHTML("beforeend",`<button>${m}</button>`))
+}
+function jumpMonth(m,y){drawer.classList.remove("on");setView(3);let el=document.querySelector(`.agenda-day[data-month="${m}"][data-year="${y}"]`);if(el)agenda.scrollTo({top:el.offsetTop-58,behavior:"smooth"})}
+document.getElementById("agendaMonth").addEventListener("click",e=>{if(e.target.closest(".plus"))return;drawer.classList.add("on");shade.classList.add("on")});
+let sx=0,sy=0;
+let edgeStart=false;phone.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY;edgeStart=e.clientX<=24});
+phone.addEventListener("pointerup",e=>{if(detailSheet.classList.contains("on")||editor.classList.contains("on")||drawer.classList.contains("on"))return;let dx=e.clientX-sx,dy=e.clientY-sy;if(!(Math.abs(dx)>75&&Math.abs(dx)>Math.abs(dy)*1.4))return;if(state.view===1&&dx>0){if(edgeStart)setView(0);return}if(state.view===0&&dx<0){setView(1);return}setView(state.view+(dx<0?1:-1))});
+renderSix();renderMonth();renderAgenda();buildDrawer();setView(3);
+setTimeout(()=>{document.getElementById("hint").style.opacity=0;flashMonth()},1800);
+setTimeout(()=>document.getElementById("a-2026-09-05")?.scrollIntoView({block:"start"}),50);
+</script>
+</body>
+</html>

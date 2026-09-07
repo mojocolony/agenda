@@ -1,0 +1,14 @@
+.six-month-view { height: 100%; overflow-y: auto; position: relative; padding: calc(58px + env(safe-area-inset-top)) 28px 34px; background: #f8f8f8; }
+.agenda-plus { border: 0; background: transparent; color: #666b76; font-size: 62px; line-height: .75; font-weight: 200; padding: 0; cursor: pointer; }
+.six-month-view__add { position: absolute; right: 18px; top: calc(26px + env(safe-area-inset-top)); }
+.six-month-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 30px 34px; margin-top: 24px; }
+.mini-month h2 { margin: 0 0 7px; text-align: center; font-size: 14px; font-weight: 800; font-style: italic; letter-spacing: -.2px; }
+.mini-weekdays, .mini-week { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); text-align: center; }
+.mini-weekdays { font-size: 10px; font-weight: 800; margin-bottom: 2px; }
+.mini-weeks { font-size: 11px; line-height: 1.7; }
+.mini-week { position: relative; border-radius: 3px; }
+.mini-week--current { background: #d6d6d6; }
+.mini-day { position: relative; z-index: 1; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; cursor: pointer; }
+.mini-day--outside { color: #d0d1d4; }
+.mini-day--today { color: #e33d36; font-weight: 800; font-style: italic; }
+@media (max-width: 360px) { .six-month-view { padding-left: 20px; padding-right: 20px; } .six-month-grid { gap: 25px 25px; } .mini-weeks { font-size: 10px; } }
