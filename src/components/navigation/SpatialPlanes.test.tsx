@@ -33,6 +33,6 @@ describe('SpatialPlanes', () => {
     fireEvent.pointerUp(root, { pointerId: 2, clientX: 180, clientY: 302 });
 
     const marker = document.querySelector('.position-indicator__marker') as HTMLElement;
-    expect(marker.style.transform).toContain('300%');
+    expect(marker.style.left).toBe('75%');
   });
 });
