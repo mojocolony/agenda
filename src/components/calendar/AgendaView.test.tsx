@@ -40,6 +40,8 @@ describe('AgendaView', () => {
     expect(dinner).not.toBeNull();
     expect(dinner?.textContent).toMatch(/\d{1,2}:30 PM/);
     expect(screen.getByText('Hamilton')).toBeInTheDocument();
+    expect(screen.getByText('Artisan Market').closest('.agenda-event__line')).toHaveTextContent('all-day');
+    expect(screen.getByText('Dinner').closest('.agenda-event__line')).toHaveTextContent(/Dinner.*6:30 PM/);
     expect(screen.getAllByLabelText('Add event').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-agenda-day="2026-09-12"]')).toHaveClass('agenda-day--empty');
     expect(document.querySelector('[data-agenda-day="2026-09-13"]')).toHaveClass('agenda-day--populated');

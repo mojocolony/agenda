@@ -37,7 +37,7 @@ function timeLabel(event: AgendaEvent): string {
   return new Date(event.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
-function DayRow({ day, colors }: { day: AgendaDay; colors: Map<string, string> }) {
+function DayRow({ day, colors, onAdd }: { day: AgendaDay; colors: Map<string, string>; onAdd?: (date: Date) => void }) {
   const weekday = day.date.toLocaleDateString('en-CA', { weekday: 'short' }).toUpperCase();
   return (
     <section className={`agenda-day ${day.events.length ? 'agenda-day--populated' : 'agenda-day--empty'}`} data-agenda-day={day.iso}>
@@ -53,12 +53,12 @@ function DayRow({ day, colors }: { day: AgendaDay; colors: Map<string, string> }
           </div>
         ))}
       </div>
-      {!day.events.length && <button className="agenda-day__add" aria-label="Add event" type="button">+</button>}
+      {!day.events.length && <button className="agenda-day__add" aria-label="Add event" type="button" onClick={() => onAdd?.(day.date)}>+</button>}
     </section>
   );
 }
 
-export function AgendaView({ anchor, calendars, events }: { anchor: Date; calendars: AgendaCalendar[]; events: AgendaEvent[] }) {
+export function AgendaView({ anchor, calendars, events, onAdd }: { anchor: Date; calendars: AgendaCalendar[]; events: AgendaEvent[]; onAdd?: (date: Date) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fadeTimer = useRef<number | undefined>(undefined);
   const [heading, setHeading] = useState(monthLabelForDate(anchor));
@@ -101,15 +101,15 @@ export function AgendaView({ anchor, calendars, events }: { anchor: Date; calend
     <div className="agenda-view">
       <div className={`agenda-floating-month ${headingVisible ? 'is-visible' : ''}`} aria-hidden={!headingVisible}>{heading}</div>
       <div className="agenda-scroll" ref={scrollRef} onScroll={handleScroll}>
-        {days.map(day => <DayRow key={day.iso} day={day} colors={colors} />)}
+        {days.map(day => <DayRow key={day.iso} day={day} colors={colors} onAdd={onAdd} />)}
         <div className="agenda-scroll__tail" />
       </div>
-      <button className="agenda-view__add" type="button" aria-label="Add event">+</button>
+      <button className="agenda-view__add" type="button" aria-label="Add event" onClick={() => onAdd?.(anchor)}>+</button>
     </div>
   );
 }
 
-export function AgendaPlane() {
+export function AgendaPlane({ onAdd }: { onAdd?: (date: Date) => void }) {
   const { calendars, events } = useCalendar();
-  return <AgendaView anchor={new Date()} calendars={calendars} events={events} />;
+  return <AgendaView anchor={new Date()} calendars={calendars} events={events} onAdd={onAdd} />;
 }
