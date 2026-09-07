@@ -76,7 +76,8 @@ export function AgendaView({ anchor, calendars, events }: { anchor: Date; calend
   useEffect(() => {
     const root = scrollRef.current;
     if (!root) return;
-    root.querySelector<HTMLElement>(`[data-agenda-day="${localISODate(anchor)}"]`)?.scrollIntoView?.({ block: 'start' });
+    const target = root.querySelector<HTMLElement>(`[data-agenda-day="${localISODate(anchor)}"]`);
+    if (target) root.scrollTop = target.offsetTop;
     armFade();
     return () => window.clearTimeout(fadeTimer.current);
   }, [anchor]);
