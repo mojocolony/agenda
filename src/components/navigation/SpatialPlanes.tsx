@@ -2,20 +2,26 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAgendaNavigation } from '../../state/useAgendaNavigation';
 import { PositionIndicator } from './PositionIndicator';
 
-interface Props { settings: ReactNode; sixMonth: ReactNode; month: ReactNode; agenda: ReactNode; plane?: 'settings' | 'sixMonth' | 'month' | 'agenda'; onPlaneChange?: (plane: 'settings' | 'sixMonth' | 'month' | 'agenda') => void; }
+type PlaneName = 'settings' | 'sixMonth' | 'month' | 'agenda';
+interface Props {
+  settings: ReactNode;
+  sixMonth: ReactNode;
+  month: ReactNode;
+  agenda: ReactNode;
+  navigationRequest?: { plane: PlaneName; id: number } | null;
+}
 
 const CAPTURE_THRESHOLD = 10;
 
-export function SpatialPlanes({ settings, sixMonth, month, agenda, plane, onPlaneChange }: Props) {
-  const navigation = useAgendaNavigation(plane ?? 'sixMonth');
+export function SpatialPlanes({ settings, sixMonth, month, agenda, navigationRequest }: Props) {
+  const navigation = useAgendaNavigation('sixMonth');
+  const lastRequestId = useRef<number | null>(null);
 
   useEffect(() => {
-    if (plane && plane !== navigation.plane) navigation.setPlane(plane);
-  }, [plane, navigation.plane]);
-
-  useEffect(() => {
-    onPlaneChange?.(navigation.plane);
-  }, [navigation.plane, onPlaneChange]);
+    if (!navigationRequest || navigationRequest.id === lastRequestId.current) return;
+    lastRequestId.current = navigationRequest.id;
+    navigation.setPlane(navigationRequest.plane);
+  }, [navigationRequest]);
   const rootRef = useRef<HTMLDivElement>(null);
   const pointerRef = useRef<{ id: number; startX: number; startY: number; captured: boolean } | null>(null);
   const [width, setWidth] = useState(390);

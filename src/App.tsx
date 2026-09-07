@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { AgendaPlane as AgendaPlaneName } from './state/useAgendaNavigation';
 import { SpatialPlanes } from './components/navigation/SpatialPlanes';
 import { SixMonthView } from './components/calendar/SixMonthView';
 import { PlaceholderView } from './components/PlaceholderView';
@@ -22,11 +21,11 @@ function AgendaApp() {
   const { calendars, events, preferences, createCalendar, createEvent } = useCalendar();
   const [editorDate, setEditorDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [plane, setPlane] = useState<AgendaPlaneName>('sixMonth');
+  const [navigationRequest, setNavigationRequest] = useState<{ plane: 'month'; id: number } | null>(null);
 
   function selectFromSixMonth(date: Date) {
     setSelectedDate(new Date(date.getFullYear(), date.getMonth(), date.getDate()));
-    setPlane('month');
+    setNavigationRequest(previous => ({ plane: 'month', id: (previous?.id ?? 0) + 1 }));
   }
 
   async function saveEvent(draft: EventDraft) {
@@ -59,8 +58,7 @@ function AgendaApp() {
   return (
     <main className="agenda-shell">
       <SpatialPlanes
-        plane={plane}
-        onPlaneChange={setPlane}
+        navigationRequest={navigationRequest}
         settings={<PlaceholderView label="SETTINGS" />}
         sixMonth={<SixMonthView anchor={selectedDate} onAdd={() => setEditorDate(new Date())} onSelectDate={selectFromSixMonth} />}
         month={<MonthView anchor={selectedDate} today={new Date()} events={events} calendars={calendars} onAdd={setEditorDate} />}
