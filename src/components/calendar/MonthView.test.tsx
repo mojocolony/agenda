@@ -23,11 +23,15 @@ describe('MonthView', () => {
     const { container } = render(<MonthView anchor={anchor} today={anchor} />);
     fireEvent.click(screen.getByRole('button', { name: 'Toggle week selector' }));
     expect(container.querySelector('.month-week-selector')).toBeInTheDocument();
+    expect(container.querySelector('.month-calendar--large')).not.toBeInTheDocument();
     expect(screen.getByText('SEP')).toBeInTheDocument();
     expect(screen.getByText('2026')).toBeInTheDocument();
     const week = screen.getByRole('button', { name: 'Select week of September 13' });
     fireEvent.click(week);
     expect(week).toHaveClass('compact-week--selected');
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle week selector' }));
+    expect(container.querySelector('.month-week-selector')).not.toBeInTheDocument();
+    expect(container.querySelector('.month-calendar--large')).toBeInTheDocument();
   });
 
   it('shows the large empty-day add control when the selected day has no events', () => {

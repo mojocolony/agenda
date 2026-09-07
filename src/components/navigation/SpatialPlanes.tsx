@@ -4,6 +4,10 @@ import { PositionIndicator } from './PositionIndicator';
 
 interface Props { settings: ReactNode; sixMonth: ReactNode; month: ReactNode; agenda: ReactNode; }
 
+function isInteractiveTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('button, a, input, textarea, select, [role=\"button\"]'));
+}
+
 export function SpatialPlanes({ settings, sixMonth, month, agenda }: Props) {
   const navigation = useAgendaNavigation('sixMonth');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -23,7 +27,11 @@ export function SpatialPlanes({ settings, sixMonth, month, agenda }: Props) {
 
   return (
     <div ref={rootRef} className="spatial-root"
-      onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); navigation.beginDrag(event.clientX - event.currentTarget.getBoundingClientRect().left, event.clientY); }}
+      onPointerDown={event => {
+        if (isInteractiveTarget(event.target)) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        navigation.beginDrag(event.clientX - event.currentTarget.getBoundingClientRect().left, event.clientY);
+      }}
       onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) navigation.moveDrag(event.clientX - event.currentTarget.getBoundingClientRect().left, event.clientY); }}
       onPointerUp={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); navigation.endDrag(); }}
       onPointerCancel={() => navigation.endDrag()}>
