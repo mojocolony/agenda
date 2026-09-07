@@ -104,7 +104,6 @@ export function AgendaView({ anchor, calendars, events, onAdd }: { anchor: Date;
         {days.map(day => <DayRow key={day.iso} day={day} colors={colors} onAdd={onAdd} />)}
         <div className="agenda-scroll__tail" />
       </div>
-      <button className="agenda-view__add" type="button" aria-label="Add event" onClick={() => onAdd?.(anchor)}>+</button>
     </div>
   );
 }

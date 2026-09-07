@@ -18,5 +18,4 @@
 .agenda-event__line span { font-size: 13px; font-weight: 400; color: #555b65; white-space: nowrap; }
 .agenda-event__location { font-size: 12px; line-height: 18px; color: #8a8e95; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .agenda-day__add { position: absolute; right: 18px; top: 7px; border: 0; background: transparent; color: #d4d5d7; font-size: 31px; font-weight: 200; line-height: 34px; padding: 0 4px; cursor: pointer; }
-.agenda-view__add { position: absolute; z-index: 9; right: 18px; top: 14px; width: 48px; height: 48px; border: 0; background: transparent; color: #626873; font-size: 48px; font-weight: 200; line-height: 42px; padding: 0; cursor: pointer; }
 .agenda-scroll__tail { height: 120px; border-top: 1px solid #d7d7d7; }
