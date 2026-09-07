@@ -25,8 +25,9 @@ describe('MonthView', () => {
     expect(container.querySelector('.month-week-selector')).toBeInTheDocument();
     expect(screen.getByText('SEP')).toBeInTheDocument();
     expect(screen.getByText('2026')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Select week of September 13' }));
-    expect(screen.getByText('13')).toBeInTheDocument();
+    const week = screen.getByRole('button', { name: 'Select week of September 13' });
+    fireEvent.click(week);
+    expect(week).toHaveClass('compact-week--selected');
   });
 
   it('shows the large empty-day add control when the selected day has no events', () => {
