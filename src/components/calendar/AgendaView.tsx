@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { AgendaCalendar, AgendaEvent } from '../../domain/types';
 import { addDays, localISODate } from '../../domain/dates';
 import { useCalendar } from '../../state/CalendarContext';
+import { MonthNavigator } from './MonthNavigator';
 
 export interface AgendaDay { date: Date; iso: string; events: AgendaEvent[]; }
 
@@ -58,11 +59,12 @@ function DayRow({ day, colors, onAdd }: { day: AgendaDay; colors: Map<string, st
   );
 }
 
-export function AgendaView({ anchor, calendars, events, onAdd }: { anchor: Date; calendars: AgendaCalendar[]; events: AgendaEvent[]; onAdd?: (date: Date) => void }) {
+export function AgendaView({ anchor, calendars, events, onAdd, onJumpMonth }: { anchor: Date; calendars: AgendaCalendar[]; events: AgendaEvent[]; onAdd?: (date: Date) => void; onJumpMonth?: (date: Date) => void }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const fadeTimer = useRef<number | undefined>(undefined);
   const [heading, setHeading] = useState(monthLabelForDate(anchor));
   const [headingVisible, setHeadingVisible] = useState(true);
+  const [navigatorOpen, setNavigatorOpen] = useState(false);
   const start = useMemo(() => addDays(anchor, -45), [anchor]);
   const end = useMemo(() => addDays(anchor, 120), [anchor]);
   const days = useMemo(() => buildAgendaDays(start, end, events), [start, end, events]);
@@ -74,6 +76,7 @@ export function AgendaView({ anchor, calendars, events, onAdd }: { anchor: Date;
   };
 
   useEffect(() => {
+    setHeading(monthLabelForDate(anchor));
     const root = scrollRef.current;
     if (!root) return;
     const target = root.querySelector<HTMLElement>(`[data-agenda-day="${localISODate(anchor)}"]`);
@@ -99,16 +102,40 @@ export function AgendaView({ anchor, calendars, events, onAdd }: { anchor: Date;
 
   return (
     <div className="agenda-view">
-      <div className={`agenda-floating-month ${headingVisible ? 'is-visible' : ''}`} aria-hidden={!headingVisible}>{heading}</div>
+      <button
+        className={`agenda-floating-month ${headingVisible ? 'is-visible' : ''}`}
+        type="button"
+        aria-label={`Open month navigator, ${heading}`}
+        aria-hidden={!headingVisible}
+        tabIndex={headingVisible ? 0 : -1}
+        onClick={() => setNavigatorOpen(true)}
+      >
+        {heading}
+      </button>
       <div className="agenda-scroll" ref={scrollRef} onScroll={handleScroll}>
         {days.map(day => <DayRow key={day.iso} day={day} colors={colors} onAdd={onAdd} />)}
         <div className="agenda-scroll__tail" />
       </div>
+      {navigatorOpen && (
+        <MonthNavigator
+          currentDate={anchor}
+          onClose={() => setNavigatorOpen(false)}
+          onJumpMonth={date => onJumpMonth?.(date)}
+        />
+      )}
     </div>
   );
 }
 
 export function AgendaPlane({ onAdd }: { onAdd?: (date: Date) => void }) {
-  const { calendars, events } = useCalendar();
-  return <AgendaView anchor={new Date()} calendars={calendars} events={events} onAdd={onAdd} />;
+  const { calendars, events, setRange } = useCalendar();
+  const [anchor, setAnchor] = useState(() => new Date());
+
+  function jumpMonth(date: Date) {
+    const next = new Date(date.getFullYear(), date.getMonth(), 1);
+    setAnchor(next);
+    setRange({ start: addDays(next, -45), end: addDays(next, 120) });
+  }
+
+  return <AgendaView anchor={anchor} calendars={calendars} events={events} onAdd={onAdd} onJumpMonth={jumpMonth} />;
 }
