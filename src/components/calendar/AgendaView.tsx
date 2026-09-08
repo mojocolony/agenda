@@ -3,6 +3,7 @@ import type { AgendaCalendar, AgendaEvent } from '../../domain/types';
 import { addDays, localISODate } from '../../domain/dates';
 import { useCalendar } from '../../state/CalendarContext';
 import { MonthNavigator } from './MonthNavigator';
+import { isMonthNavigatorRightEdge, shouldOpenMonthNavigator } from './monthNavigatorGesture';
 
 export interface AgendaDay { date: Date; iso: string; events: AgendaEvent[]; }
 
@@ -65,6 +66,8 @@ export function AgendaView({ anchor, calendars, events, onAdd, onJumpMonth }: { 
   const [heading, setHeading] = useState(monthLabelForDate(anchor));
   const [headingVisible, setHeadingVisible] = useState(true);
   const [navigatorOpen, setNavigatorOpen] = useState(false);
+  const navigatorGesture = useRef<{ id: number; startX: number; startY: number; width: number } | null>(null);
+  const [navigatorDrag, setNavigatorDrag] = useState<number | null>(null);
   const start = useMemo(() => addDays(anchor, -45), [anchor]);
   const end = useMemo(() => addDays(anchor, 120), [anchor]);
   const days = useMemo(() => buildAgendaDays(start, end, events), [start, end, events]);
@@ -102,25 +105,62 @@ export function AgendaView({ anchor, calendars, events, onAdd, onJumpMonth }: { 
 
   return (
     <div className="agenda-view">
-      <button
-        className={`agenda-floating-month ${headingVisible ? 'is-visible' : ''}`}
-        type="button"
-        aria-label={`Open month navigator, ${heading}`}
-        aria-hidden={!headingVisible}
-        tabIndex={headingVisible ? 0 : -1}
-        onClick={() => setNavigatorOpen(true)}
+      <div className={`agenda-floating-month ${headingVisible ? 'is-visible' : ''}`} aria-hidden={!headingVisible}>{heading}</div>
+      <div
+        className="agenda-scroll"
+        ref={scrollRef}
+        onScroll={handleScroll}
+        onPointerDown={event => {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const startX = event.clientX - bounds.left;
+          if (!isMonthNavigatorRightEdge(startX, bounds.width)) return;
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          event.stopPropagation();
+          navigatorGesture.current = { id: event.pointerId, startX, startY: event.clientY, width: bounds.width };
+          setNavigatorDrag(0);
+        }}
+        onPointerMove={event => {
+          const gesture = navigatorGesture.current;
+          if (!gesture || gesture.id !== event.pointerId) return;
+          event.stopPropagation();
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const x = event.clientX - bounds.left;
+          const dx = Math.min(0, x - gesture.startX);
+          const dy = event.clientY - gesture.startY;
+          if (Math.abs(dx) > Math.abs(dy) && !event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }
+          setNavigatorDrag(dx);
+        }}
+        onPointerUp={event => {
+          const gesture = navigatorGesture.current;
+          if (!gesture || gesture.id !== event.pointerId) return;
+          event.stopPropagation();
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const x = event.clientX - bounds.left;
+          const dx = x - gesture.startX;
+          const dy = event.clientY - gesture.startY;
+          if (shouldOpenMonthNavigator(gesture.startX, gesture.width, dx, dy)) setNavigatorOpen(true);
+          setNavigatorDrag(null);
+          navigatorGesture.current = null;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        }}
+        onPointerCancel={event => {
+          if (navigatorGesture.current?.id !== event.pointerId) return;
+          event.stopPropagation();
+          navigatorGesture.current = null;
+          setNavigatorDrag(null);
+        }}
       >
-        {heading}
-      </button>
-      <div className="agenda-scroll" ref={scrollRef} onScroll={handleScroll}>
         {days.map(day => <DayRow key={day.iso} day={day} colors={colors} onAdd={onAdd} />)}
         <div className="agenda-scroll__tail" />
       </div>
-      {navigatorOpen && (
+      {(navigatorOpen || navigatorDrag !== null) && (
         <MonthNavigator
           currentDate={anchor}
-          onClose={() => setNavigatorOpen(false)}
+          onClose={() => { setNavigatorOpen(false); setNavigatorDrag(null); }}
           onJumpMonth={date => onJumpMonth?.(date)}
+          dragOffset={navigatorOpen ? 0 : navigatorDrag}
         />
       )}
     </div>

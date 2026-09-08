@@ -6,11 +6,13 @@ const MONTH_LONG = ['January','February','March','April','May','June','July','Au
 export function MonthNavigator({
   currentDate,
   onClose,
-  onJumpMonth
+  onJumpMonth,
+  dragOffset = 0
 }: {
   currentDate: Date;
   onClose: () => void;
   onJumpMonth: (date: Date) => void;
+  dragOffset?: number | null;
 }) {
   const currentYear = currentDate.getFullYear();
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
@@ -35,7 +37,12 @@ export function MonthNavigator({
   return (
     <>
       <button className="month-navigator-shade" type="button" aria-label="Close month navigator" onClick={onClose} />
-      <aside className="month-navigator" role="navigation" aria-label="Month navigator">
+      <aside
+        className="month-navigator"
+        role="navigation"
+        aria-label="Month navigator"
+        style={dragOffset !== null && dragOffset !== 0 ? { transform: `translateX(max(0px, calc(100% + ${dragOffset}px)))`, animation: 'none' } : undefined}
+      >
         {selectedYear === null ? (
           <div className="month-navigator__years">
             {years.map(year => (
